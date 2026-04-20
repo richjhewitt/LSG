@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Locomotive Schedule Generator</title>
+
+<style>
+body {
+  font-family: sans-serif;
+  background: #1e1f22;
+  color: #fff;
+  padding: 20px;
+  margin: 0;
+}
+
+.container {
+  max-width: 1100px;
+  margin: auto;
+}
+
+input, textarea, select {
+  width: 100%;
+  padding: 8px;
+  margin-bottom: 10px;
+  background: #2b2d31;
+  color: #fff;
+  border: 1px solid #444;
+  border-radius: 6px;
+}
+
+button {
+  padding: 8px 12px;
+  background: #5865F2;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  margin: 5px 5px 10px 0;
+}
+
+button:hover { background: #4752C4; }
+button.danger { background: #ed4245; }
+
+.row {
+  display: grid;
+  grid-template-columns: 1fr 120px 40px;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.section { margin-top: 30px; }
+
+.output {
+  white-space: pre-wrap;
+  background: #2b2d31;
+  padding: 10px;
+  border-radius: 6px;
+}
+
+/* checkboxes */
+.checkbox-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 10px;
+  text-align: center;
+}
+
+/* flyer layout */
+.flyer-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 16px;
+  align-items: stretch;
+}
+
+.tz-block {
+  background: #2b2d31;
+  padding: 10px;
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.inner {
+  display: grid;
+  gap: 6px;
+  align-items: stretch;
+  flex: 1;
+}
+
+.tz-block strong {
+  display: block;
+  margin-bottom: 10px;
+}
+
+.flyer-col {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  gap: 6px;
+}
+
+.flyer-col button,
+.flyer-col textarea {
+  margin-bottom: 0;
+}
+
+.flyer-col textarea {
+  min-height: 120px;
+  height: 100%;
+  resize: vertical;
+}
+</style>
+</head>
+
+<body>
+<div class="container">
+
+<h2>🚂 Locomotive Schedule Generator</h2>
+
+<label>Event Name</label>
+<input id="eventName" value="DnB Locomotive">
+
+<label>Start Date</label>
+<input id="startDate" type="date">
+
+<label>Input Timezone</label>
+<select id="timezone">
+<option value="auto">Local (Auto)</option>
+<option value="Europe/London">UK</option>
+<option value="Europe/Paris">EU</option>
+<option value="Australia/Brisbane">AUS</option>
+<option value="America/New_York">US East</option>
+<option value="America/Chicago">US Central</option>
+<option value="America/Denver">US Mountain</option>
+<option value="America/Los_Angeles">US Pacific</option>
+</select>
+
+<label>Paste Schedule</label>
+<textarea id="pasteBox"></textarea>
+
+<div id="schedule"></div>
+<button onclick="addRow()">+ Add Row</button>
+
+<!-- HAMMERTIME -->
+<div class="section">
+<h3>Hammertime</h3>
+<button onclick="generateHammertime()">Generate</button>
+<button onclick="generateHammertime(); copy('output')">Generate + Copy</button>
+<div id="output" class="output"></div>
+</div>
+
+<!-- CHATBOT -->
+<div class="section">
+<h3>Chatbot</h3>
+<div id="tzChecks" class="checkbox-grid"></div>
+<button onclick="generateBot()">Generate</button>
+<button onclick="generateBot(); copy('botOutput')">Generate + Copy</button>
+<div id="botOutput" class="output"></div>
+</div>
+
+<!-- FLYER -->
+<div class="section">
+<h3>Flyer Text (Canva)</h3>
+
+<label>Columns</label>
+<select id="colCount">
+<option value="1">1</option>
+<option value="2" selected>2</option>
+<option value="3">3</option>
+<option value="4">4</option>
+</select>
+
+<button onclick="generateFlyer()">Generate Text</button>
+
+<div id="flyerTimes"></div>
+
+</div>
+
+</div>
+
+<script>
+
+// ---------- COPY ----------
+function copy(id){
+  const el = document.getElementById(id);
+  if(!el) return;
+  navigator.clipboard.writeText(el.value ?? el.textContent ?? "");
+}
+
+// ---------- TZ MAP ----------
+const tzMap = {
+  "Europe/London": "UK",
+  "Europe/Paris": "EU",
+  "Australia/Brisbane": "AUS",
+  "America/New_York": "US East",
+  "America/Chicago": "US Central",
+  "America/Denver": "US Mountain",
+  "America/Los_Angeles": "US Pacific"
+};
+
+// ---------- CHECKBOXES ----------
+Object.entries(tzMap).forEach(([tz,label])=>{
+  const div=document.createElement("div");
+  div.innerHTML=`<input type="checkbox" checked value="${tz}"><br>${label}`;
+  tzChecks.appendChild(div);
+});
+
+// ---------- NORMALISE ----------
+function normaliseTime(t){
+  if(!t) return "";
+  t=t.trim().toLowerCase().replace(/\s+/g,"");
+
+  if(t.includes(":") && !t.includes("am") && !t.includes("pm")){
+    let [h,m]=t.split(":").map(Number);
+    return `${String(h).padStart(2,"0")}:${String(m).padStart(2,"0")}`;
+  }
+
+  let m=t.match(/^(\d+)(?::(\d+))?(am|pm)$/);
+  if(m){
+    let h=+m[1],min=+(m[2]||0);
+    if(m[3]==="pm"&&h!==12)h+=12;
+    if(m[3]==="am"&&h===12)h=0;
+    return `${String(h).padStart(2,"0")}:${String(min).padStart(2,"0")}`;
+  }
+  return "";
+}
+
+// ---------- ROW ----------
+function addRow(name="",time=""){
+  const r=document.createElement("div");
+  r.className="row";
+  r.innerHTML=`<input value="${name}">
+  <input type="time">
+  <button class="danger">✕</button>`;
+
+  const t=r.children[1];
+  t.value=normaliseTime(time);
+
+  r.children[2].onclick=()=>r.remove();
+  schedule.appendChild(r);
+}
+
+// ---------- PARSER ----------
+pasteBox.oninput=()=>{
+  schedule.innerHTML="";
+  pasteBox.value.trim().split("\n").forEach(line=>{
+    const p=line.trim().split(/\s+/).filter(Boolean);
+    if(p.length>=2){
+      const norm=normaliseTime(p[p.length-1]);
+      if(norm) addRow(p[0],norm);
+    }
+  });
+};
+
+function getRows(){
+  const rows=[];
+  document.querySelectorAll(".row").forEach(r=>{
+    const n=r.children[0].value.trim();
+    const t=r.children[1].value;
+    if(n&&t) rows.push({name:n,time:t});
+  });
+  return rows;
+}
+
+// ---------- TIME ----------
+function makeUTCDate(y,m,d,h,min,tz){
+  if(tz==="auto") return new Date(y,m-1,d,h,min);
+  const guess=new Date(Date.UTC(y,m-1,d,h,min));
+  const parts=new Intl.DateTimeFormat("en-US",{timeZone:tz,hour12:false,
+    year:"numeric",month:"2-digit",day:"2-digit",
+    hour:"2-digit",minute:"2-digit"}).formatToParts(guess);
+  const v={}; parts.forEach(p=>v[p.type]=p.value);
+  const asUTC=Date.UTC(v.year,v.month-1,v.day,v.hour,v.minute);
+  return new Date(guess.getTime()-(asUTC-guess.getTime()));
+}
+
+function getTimeParts(date,tz){
+  const p=new Intl.DateTimeFormat("en-GB",{timeZone:tz,hour:"2-digit",minute:"2-digit"}).formatToParts(date);
+  let h=0,m=0;
+  p.forEach(x=>{if(x.type==="hour")h=+x.value;if(x.type==="minute")m=+x.value});
+  return {h,m};
+}
+
+function formatTime(h,m,tz){
+  if(tz.includes("America")){
+    let hr=h%12||12;
+    let s=h>=12?"pm":"am";
+    return m?`${hr}:${String(m).padStart(2,"0")}${s}`:`${hr}${s}`;
+  }
+  return `${String(h).padStart(2,"0")}:${String(m).padStart(2,"0")}`;
+}
+
+function getLabel(tz,date){
+  const str=new Intl.DateTimeFormat("en-GB",{timeZone:tz,timeZoneName:"shortOffset"}).format(date);
+  if(tz==="Europe/London") return str.includes("+1")?"BST":"GMT";
+  if(tz==="Europe/Paris") return str.includes("+2")?"CEST":"CET";
+  if(tz==="Australia/Brisbane") return "AEST";
+  if(tz==="America/New_York") return str.includes("-4")?"EDT":"EST";
+  if(tz==="America/Chicago") return str.includes("-5")?"CDT":"CST";
+  if(tz==="America/Denver") return str.includes("-6")?"MDT":"MST";
+  if(tz==="America/Los_Angeles") return str.includes("-7")?"PDT":"PST";
+}
+
+// ---------- HAMMERTIME ----------
+function generateHammertime(){
+  const rows=getRows();
+  let [y,m,d]=startDate.value.split("-").map(Number);
+  let prev=null,off=0,out="",first=null;
+
+  rows.forEach(r=>{
+    const [h,mi]=r.time.split(":").map(Number);
+    if(prev!==null && h<prev) off++;
+    prev=h;
+
+    const dt=makeUTCDate(y,m,d+off,h,mi,timezone.value);
+    const unix=Math.floor(dt/1000);
+    if(!first) first=unix;
+
+    out+=`> [${r.name}](https://twitch.tv/${r.name}) - <t:${unix}:t>\n`;
+  });
+
+  output.textContent=`🚂 ${eventName.value} - <t:${first}:R>\n`+out.trim();
+}
+
+// ---------- BOT ----------
+function generateBot(){
+  const rows=getRows();
+  let [y,m,d]=startDate.value.split("-").map(Number);
+  const base=new Date(y,m-1,d);
+
+  let out="";
+  document.querySelectorAll("#tzChecks input:checked").forEach(cb=>{
+    const tz=cb.value;
+    let line=`🚂 ${eventName.value} (${getLabel(tz,base)}):`;
+
+    rows.forEach(r=>{
+      const [h,mi]=r.time.split(":").map(Number);
+      const dt=makeUTCDate(y,m,d,h,mi,timezone.value);
+      const t=getTimeParts(dt,tz);
+      line+=` 🚃 ${formatTime(t.h,t.m,tz)} @${r.name}`;
+    });
+
+    out+="`"+line+"`\n\n";
+  });
+
+  botOutput.textContent=out.trim();
+}
+
+// ---------- SPLIT ----------
+function splitColumns(arr, cols){
+  const out=[];
+  const base=Math.floor(arr.length/cols);
+  let extra=arr.length%cols;
+  let i=0;
+
+  for(let c=0;c<cols;c++){
+    let size=base+(extra>0?1:0);
+    if(extra>0) extra--;
+    out.push(arr.slice(i,i+size));
+    i+=size;
+  }
+  return out;
+}
+
+// ---------- FLYER ----------
+function generateFlyer(){
+  const rows=getRows();
+  const cols=parseInt(colCount.value);
+  const split=splitColumns(rows,cols);
+
+  const tzs = Array.from(document.querySelectorAll("#tzChecks input:checked")).map(cb=>cb.value);
+
+  flyerTimes.innerHTML="";
+
+  const row1=document.createElement("div");
+  row1.className="flyer-row";
+
+  const row2=document.createElement("div");
+  row2.className="flyer-row";
+
+  function buildBlock(title, fn, idPrefix){
+    const wrap=document.createElement("div");
+    wrap.className="tz-block";
+    wrap.innerHTML=`<strong>${title}</strong>`;
+
+    const inner=document.createElement("div");
+    inner.className="inner";
+    inner.style.gridTemplateColumns=`repeat(${cols}, minmax(0, 1fr))`;
+
+    split.forEach((col,i)=>{
+      const group=document.createElement("div");
+      group.className="flyer-col";
+
+      const ta=document.createElement("textarea");
+      ta.id=idPrefix+"_"+i;
+      ta.value=fn(col);
+
+      const btn=document.createElement("button");
+      btn.textContent="Copy";
+      btn.onclick=()=>copy(ta.id);
+
+      group.appendChild(btn);
+      group.appendChild(ta);
+      inner.appendChild(group);
+    });
+
+    wrap.appendChild(inner);
+    return wrap;
+  }
+
+  // Row 1
+  row1.appendChild(buildBlock("Names",col=>col.map(r=>r.name).join("\n"),"n"));
+
+  tzs.slice(0,3).forEach(tz=>{
+    row1.appendChild(buildBlock(
+      tzMap[tz],
+      col=>{
+        let prev=null,off=0;
+        return col.map(r=>{
+          const [h,mi]=r.time.split(":").map(Number);
+          if(prev!==null && h<prev) off++;
+          prev=h;
+          const dt=makeUTCDate(...startDate.value.split("-").map(Number),h,mi,timezone.value);
+          const t=getTimeParts(dt,tz);
+          return formatTime(t.h,t.m,tz);
+        }).join("\n");
+      },
+      tz
+    ));
+  });
+
+  // Row 2
+  tzs.slice(3).forEach(tz=>{
+    row2.appendChild(buildBlock(
+      tzMap[tz],
+      col=>{
+        let prev=null,off=0;
+        return col.map(r=>{
+          const [h,mi]=r.time.split(":").map(Number);
+          if(prev!==null && h<prev) off++;
+          prev=h;
+          const dt=makeUTCDate(...startDate.value.split("-").map(Number),h,mi,timezone.value);
+          const t=getTimeParts(dt,tz);
+          return formatTime(t.h,t.m,tz);
+        }).join("\n");
+      },
+      tz+"_2"
+    ));
+  });
+
+  flyerTimes.appendChild(row1);
+  flyerTimes.appendChild(row2);
+}
+
+</script>
+</body>
+</html>
