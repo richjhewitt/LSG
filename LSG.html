@@ -60,7 +60,7 @@ button.danger { background: #ed4245; }
 /* checkboxes */
 .checkbox-grid {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
   gap: 10px;
   text-align: center;
 }
@@ -111,6 +111,23 @@ button.danger { background: #ed4245; }
   height: 100%;
   resize: vertical;
 }
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.actions button {
+  margin: 0;
+}
+
+.message {
+  min-height: 20px;
+  margin-top: 8px;
+  color: #ffcc66;
+}
 </style>
 </head>
 
@@ -141,7 +158,11 @@ button.danger { background: #ed4245; }
 <textarea id="pasteBox"></textarea>
 
 <div id="schedule"></div>
+<div class="actions">
+<button onclick="parseSchedule()">Parse Schedule</button>
 <button onclick="addRow()">+ Add Row</button>
+</div>
+<div id="message" class="message"></div>
 
 <!-- HAMMERTIME -->
 <div class="section">
@@ -182,11 +203,27 @@ button.danger { background: #ed4245; }
 
 <script>
 
+const eventNameInput = document.getElementById("eventName");
+const startDateInput = document.getElementById("startDate");
+const timezoneSelect = document.getElementById("timezone");
+const pasteBox = document.getElementById("pasteBox");
+const schedule = document.getElementById("schedule");
+const tzChecks = document.getElementById("tzChecks");
+const output = document.getElementById("output");
+const botOutput = document.getElementById("botOutput");
+const colCountSelect = document.getElementById("colCount");
+const flyerTimes = document.getElementById("flyerTimes");
+const message = document.getElementById("message");
+
 // ---------- COPY ----------
 function copy(id){
   const el = document.getElementById(id);
   if(!el) return;
   navigator.clipboard.writeText(el.value ?? el.textContent ?? "");
+}
+
+function setMessage(text=""){
+  message.textContent = text;
 }
 
 // ---------- TZ MAP ----------
@@ -231,19 +268,27 @@ function normaliseTime(t){
 function addRow(name="",time=""){
   const r=document.createElement("div");
   r.className="row";
-  r.innerHTML=`<input value="${name}">
-  <input type="time">
-  <button class="danger">✕</button>`;
+  const nameInput=document.createElement("input");
+  nameInput.value=name;
 
-  const t=r.children[1];
-  t.value=normaliseTime(time);
+  const timeInput=document.createElement("input");
+  timeInput.type="time";
+  timeInput.value=normaliseTime(time);
 
-  r.children[2].onclick=()=>r.remove();
+  const removeButton=document.createElement("button");
+  removeButton.className="danger";
+  removeButton.type="button";
+  removeButton.textContent="✕";
+  removeButton.onclick=()=>r.remove();
+
+  r.appendChild(nameInput);
+  r.appendChild(timeInput);
+  r.appendChild(removeButton);
   schedule.appendChild(r);
 }
 
 // ---------- PARSER ----------
-pasteBox.oninput=()=>{
+function parseSchedule(){
   schedule.innerHTML="";
   pasteBox.value.trim().split("\n").forEach(line=>{
     const p=line.trim().split(/\s+/).filter(Boolean);
@@ -252,7 +297,12 @@ pasteBox.oninput=()=>{
       if(norm) addRow(p[0],norm);
     }
   });
-};
+  setMessage("");
+}
+
+pasteBox.addEventListener("paste",()=>{
+  setTimeout(parseSchedule,0);
+});
 
 function getRows(){
   const rows=[];
@@ -262,6 +312,35 @@ function getRows(){
     if(n&&t) rows.push({name:n,time:t});
   });
   return rows;
+}
+
+function getSelectedTimezones(){
+  return Array.from(document.querySelectorAll("#tzChecks input:checked")).map(cb=>cb.value);
+}
+
+function validateInputs(options={}){
+  const rows=getRows();
+
+  if(!startDateInput.value){
+    setMessage("Please choose a start date first.");
+    return null;
+  }
+
+  if(rows.length===0){
+    setMessage("Please add at least one valid schedule row first.");
+    return null;
+  }
+
+  if(options.requireTimezones){
+    const tzs=getSelectedTimezones();
+    if(tzs.length===0){
+      setMessage("Please select at least one timezone first.");
+      return null;
+    }
+    return {rows, tzs};
+  }
+
+  return {rows};
 }
 
 // ---------- TIME ----------
@@ -305,8 +384,11 @@ function getLabel(tz,date){
 
 // ---------- HAMMERTIME ----------
 function generateHammertime(){
-  const rows=getRows();
-  let [y,m,d]=startDate.value.split("-").map(Number);
+  const valid=validateInputs();
+  if(!valid) return;
+
+  const {rows}=valid;
+  let [y,m,d]=startDateInput.value.split("-").map(Number);
   let prev=null,off=0,out="",first=null;
 
   rows.forEach(r=>{
@@ -314,30 +396,33 @@ function generateHammertime(){
     if(prev!==null && h<prev) off++;
     prev=h;
 
-    const dt=makeUTCDate(y,m,d+off,h,mi,timezone.value);
+    const dt=makeUTCDate(y,m,d+off,h,mi,timezoneSelect.value);
     const unix=Math.floor(dt/1000);
     if(!first) first=unix;
 
     out+=`> [${r.name}](https://twitch.tv/${r.name}) - <t:${unix}:t>\n`;
   });
 
-  output.textContent=`🚂 ${eventName.value} - <t:${first}:R>\n`+out.trim();
+  output.textContent=`🚂 ${eventNameInput.value} - <t:${first}:R>\n`+out.trim();
+  setMessage("");
 }
 
 // ---------- BOT ----------
 function generateBot(){
-  const rows=getRows();
-  let [y,m,d]=startDate.value.split("-").map(Number);
+  const valid=validateInputs({requireTimezones:true});
+  if(!valid) return;
+
+  const {rows, tzs}=valid;
+  let [y,m,d]=startDateInput.value.split("-").map(Number);
   const base=new Date(y,m-1,d);
 
   let out="";
-  document.querySelectorAll("#tzChecks input:checked").forEach(cb=>{
-    const tz=cb.value;
-    let line=`🚂 ${eventName.value} (${getLabel(tz,base)}):`;
+  tzs.forEach(tz=>{
+    let line=`🚂 ${eventNameInput.value} (${getLabel(tz,base)}):`;
 
     rows.forEach(r=>{
       const [h,mi]=r.time.split(":").map(Number);
-      const dt=makeUTCDate(y,m,d,h,mi,timezone.value);
+      const dt=makeUTCDate(y,m,d,h,mi,timezoneSelect.value);
       const t=getTimeParts(dt,tz);
       line+=` 🚃 ${formatTime(t.h,t.m,tz)} @${r.name}`;
     });
@@ -346,6 +431,7 @@ function generateBot(){
   });
 
   botOutput.textContent=out.trim();
+  setMessage("");
 }
 
 // ---------- SPLIT ----------
@@ -366,11 +452,12 @@ function splitColumns(arr, cols){
 
 // ---------- FLYER ----------
 function generateFlyer(){
-  const rows=getRows();
-  const cols=parseInt(colCount.value);
-  const split=splitColumns(rows,cols);
+  const valid=validateInputs({requireTimezones:true});
+  if(!valid) return;
 
-  const tzs = Array.from(document.querySelectorAll("#tzChecks input:checked")).map(cb=>cb.value);
+  const {rows, tzs}=valid;
+  const cols=parseInt(colCountSelect.value,10);
+  const split=splitColumns(rows,cols);
 
   flyerTimes.innerHTML="";
 
@@ -422,7 +509,7 @@ function generateFlyer(){
           const [h,mi]=r.time.split(":").map(Number);
           if(prev!==null && h<prev) off++;
           prev=h;
-          const dt=makeUTCDate(...startDate.value.split("-").map(Number),h,mi,timezone.value);
+          const dt=makeUTCDate(...startDateInput.value.split("-").map(Number),h,mi,timezoneSelect.value);
           const t=getTimeParts(dt,tz);
           return formatTime(t.h,t.m,tz);
         }).join("\n");
@@ -441,7 +528,7 @@ function generateFlyer(){
           const [h,mi]=r.time.split(":").map(Number);
           if(prev!==null && h<prev) off++;
           prev=h;
-          const dt=makeUTCDate(...startDate.value.split("-").map(Number),h,mi,timezone.value);
+          const dt=makeUTCDate(...startDateInput.value.split("-").map(Number),h,mi,timezoneSelect.value);
           const t=getTimeParts(dt,tz);
           return formatTime(t.h,t.m,tz);
         }).join("\n");
@@ -452,6 +539,7 @@ function generateFlyer(){
 
   flyerTimes.appendChild(row1);
   flyerTimes.appendChild(row2);
+  setMessage("");
 }
 
 </script>
