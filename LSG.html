@@ -82,9 +82,98 @@ button.danger { background: #ed4245; }
 
 .row {
   display: grid;
-  grid-template-columns: 1fr 120px 40px;
+  grid-template-columns: 36px minmax(0, 1fr) 120px 120px;
   gap: 10px;
+  align-items: start;
   margin-bottom: 6px;
+}
+
+.row.dragging {
+  opacity: 0.48;
+}
+
+.row input {
+  margin-bottom: 0;
+}
+
+.name-cell {
+  position: relative;
+}
+
+.name-cell input {
+  padding-right: 42px;
+}
+
+.name-drag-handle {
+  position: absolute;
+  top: 0;
+  right: 0;
+  background: transparent;
+  color: #b5bac1;
+  border-left: 1px solid #444;
+  border-radius: 0 6px 6px 0;
+  cursor: grab;
+  touch-action: none;
+}
+
+.name-drag-handle:hover {
+  background: #34373e;
+  color: #fff;
+}
+
+.name-drag-handle:active {
+  cursor: grabbing;
+}
+
+.row.name-drop-target .name-input {
+  outline: 2px solid rgba(35, 165, 90, 0.85);
+  outline-offset: 1px;
+}
+
+.row-actions {
+  display: grid;
+  grid-template-columns: repeat(3, 36px);
+  gap: 6px;
+}
+
+.icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  margin: 0;
+  border-radius: 8px;
+  background: #3a3d44;
+  color: #fff;
+}
+
+.icon-button:hover {
+  background: #4752C4;
+}
+
+.icon-button.danger:hover {
+  background: #c93437;
+}
+
+.icon-button svg {
+  width: 18px;
+  height: 18px;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  fill: none;
+}
+
+.drag-handle {
+  cursor: grab;
+  touch-action: none;
+}
+
+.drag-handle:active {
+  cursor: grabbing;
 }
 
 .section { margin-top: 30px; }
@@ -164,7 +253,7 @@ button.danger { background: #ed4245; }
 
 .row-header {
   display: grid;
-  grid-template-columns: 1fr 120px 40px;
+  grid-template-columns: 36px minmax(0, 1fr) 120px 120px;
   gap: 10px;
   margin-bottom: 10px;
   color: #b5bac1;
@@ -430,7 +519,25 @@ button.danger { background: #ed4245; }
     grid-template-columns: 1fr;
   }
 
-  .row-header div:last-child {
+  .row {
+    gap: 8px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #3a3d44;
+  }
+
+  .drag-handle {
+    width: 100%;
+  }
+
+  .row-actions {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .icon-button {
+    width: 100%;
+  }
+
+  .row-header {
     display: none;
   }
 
@@ -510,9 +617,10 @@ button.danger { background: #ed4245; }
 </div>
 <div class="schedule-wrap">
 <div class="row-header">
+<div></div>
 <div>Streamer</div>
 <div>Time</div>
-<div></div>
+<div>Actions</div>
 </div>
 <div id="schedule" class="schedule-list"></div>
 </div>
@@ -681,27 +789,162 @@ function normaliseTime(t){
 }
 
 // ---------- ROW ----------
-function addRow(name="",time=""){
+const icons = {
+  grip: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="6" r="1"></circle><circle cx="9" cy="12" r="1"></circle><circle cx="9" cy="18" r="1"></circle><circle cx="15" cy="6" r="1"></circle><circle cx="15" cy="12" r="1"></circle><circle cx="15" cy="18" r="1"></circle></svg>',
+  addAbove: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v10"></path><path d="M7 10l5-5 5 5"></path><path d="M6 19h12"></path></svg>',
+  addBelow: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V9"></path><path d="M7 14l5 5 5-5"></path><path d="M6 5h12"></path></svg>',
+  trash: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18"></path><path d="M8 6V4h8v2"></path><path d="M19 6l-1 14H6L5 6"></path><path d="M10 11v5"></path><path d="M14 11v5"></path></svg>'
+};
+
+let draggingRow = null;
+let draggingNameInput = null;
+
+function makeIconButton(label, icon, className=""){
+  const button=document.createElement("button");
+  button.className=`icon-button ${className}`.trim();
+  button.type="button";
+  button.title=label;
+  button.setAttribute("aria-label", label);
+  button.innerHTML=icon;
+  return button;
+}
+
+function focusRow(row){
+  const input=row?.querySelector(".name-input");
+  if(input) input.focus();
+}
+
+function getScheduleRows(){
+  return Array.from(schedule.querySelectorAll(".row"));
+}
+
+function moveNameToRow(targetRow){
+  if(!draggingNameInput || !targetRow) return;
+  const rows=getScheduleRows();
+  const sourceRow=draggingNameInput.closest(".row");
+  const sourceIndex=rows.indexOf(sourceRow);
+  const targetIndex=rows.indexOf(targetRow);
+  if(sourceIndex < 0 || targetIndex < 0 || sourceIndex===targetIndex) return;
+
+  const names=rows.map(row=>row.querySelector(".name-input").value);
+  const [name]=names.splice(sourceIndex, 1);
+  names.splice(targetIndex, 0, name);
+
+  rows.forEach((row,index)=>{
+    row.querySelector(".name-input").value=names[index] || "";
+  });
+  rows[targetIndex].querySelector(".name-input").focus();
+}
+
+function addRow(name="",time="",options={}){
   const r=document.createElement("div");
   r.className="row";
+  const dragHandle=makeIconButton("Drag row", icons.grip, "drag-handle");
+  dragHandle.draggable=true;
+  dragHandle.addEventListener("dragstart",e=>{
+    draggingRow=r;
+    r.classList.add("dragging");
+    e.dataTransfer.effectAllowed="move";
+    e.dataTransfer.setData("text/plain", "");
+  });
+  dragHandle.addEventListener("dragend",()=>{
+    r.classList.remove("dragging");
+    draggingRow=null;
+  });
+
   const nameInput=document.createElement("input");
+  nameInput.className="name-input";
   nameInput.value=name;
 
+  const nameCell=document.createElement("div");
+  nameCell.className="name-cell";
+
+  const nameDragHandle=makeIconButton("Move streamer", icons.grip, "name-drag-handle");
+  nameDragHandle.draggable=true;
+  nameDragHandle.addEventListener("dragstart",e=>{
+    if(!nameInput.value.trim()){
+      e.preventDefault();
+      return;
+    }
+    draggingNameInput=nameInput;
+    e.dataTransfer.effectAllowed="move";
+    e.dataTransfer.setData("text/plain", nameInput.value);
+  });
+  nameDragHandle.addEventListener("dragend",()=>{
+    draggingNameInput=null;
+    getScheduleRows().forEach(row=>row.classList.remove("name-drop-target"));
+  });
+  nameCell.appendChild(nameInput);
+  nameCell.appendChild(nameDragHandle);
+
   const timeInput=document.createElement("input");
+  timeInput.className="time-input";
   timeInput.type="time";
   timeInput.value=normaliseTime(time);
 
-  const removeButton=document.createElement("button");
-  removeButton.className="danger";
-  removeButton.type="button";
-  removeButton.textContent="✕";
+  const actions=document.createElement("div");
+  actions.className="row-actions";
+
+  const addAboveButton=makeIconButton("Add row above", icons.addAbove);
+  addAboveButton.onclick=()=>focusRow(addRow("","",{before:r, focus:true}));
+
+  const addBelowButton=makeIconButton("Add row below", icons.addBelow);
+  addBelowButton.onclick=()=>focusRow(addRow("","",{after:r, focus:true}));
+
+  const removeButton=makeIconButton("Delete row", icons.trash, "danger");
   removeButton.onclick=()=>r.remove();
 
-  r.appendChild(nameInput);
+  actions.appendChild(addAboveButton);
+  actions.appendChild(addBelowButton);
+  actions.appendChild(removeButton);
+
+  r.appendChild(dragHandle);
+  r.appendChild(nameCell);
   r.appendChild(timeInput);
-  r.appendChild(removeButton);
-  schedule.appendChild(r);
+  r.appendChild(actions);
+
+  if(options.before){
+    schedule.insertBefore(r, options.before);
+  }else if(options.after){
+    options.after.insertAdjacentElement("afterend", r);
+  }else{
+    schedule.appendChild(r);
+  }
+
+  if(options.focus) focusRow(r);
+  return r;
 }
+
+schedule.addEventListener("dragover",e=>{
+  const row=e.target.closest(".row");
+
+  if(draggingNameInput){
+    e.preventDefault();
+    getScheduleRows().forEach(scheduleRow=>{
+      scheduleRow.classList.toggle("name-drop-target", scheduleRow===row);
+    });
+    return;
+  }
+
+  if(!draggingRow) return;
+  e.preventDefault();
+  if(!row || row===draggingRow || row.parentElement!==schedule) return;
+  const box=row.getBoundingClientRect();
+  const after=e.clientY > box.top + box.height / 2;
+  schedule.insertBefore(draggingRow, after ? row.nextSibling : row);
+});
+
+schedule.addEventListener("drop",e=>{
+  if(draggingNameInput){
+    e.preventDefault();
+    moveNameToRow(e.target.closest(".row"));
+    getScheduleRows().forEach(row=>row.classList.remove("name-drop-target"));
+    draggingNameInput=null;
+    return;
+  }
+
+  if(draggingRow) e.preventDefault();
+});
 
 // ---------- PARSER ----------
 function parseSchedule(){
@@ -723,8 +966,8 @@ pasteBox.addEventListener("paste",()=>{
 function getRows(){
   const rows=[];
   document.querySelectorAll(".row").forEach(r=>{
-    const n=r.children[0].value.trim();
-    const t=r.children[1].value;
+    const n=r.querySelector(".name-input").value.trim();
+    const t=r.querySelector(".time-input").value;
     if(n&&t) rows.push({name:n,time:t});
   });
   return rows;
