@@ -5,17 +5,51 @@
 <title>Locomotive Schedule Generator</title>
 
 <style>
+* {
+  box-sizing: border-box;
+}
+
 body {
   font-family: sans-serif;
   background: #1e1f22;
   color: #fff;
   padding: 20px;
   margin: 0;
+  background-image:
+    radial-gradient(circle at top left, rgba(88, 101, 242, 0.18), transparent 30%),
+    radial-gradient(circle at top right, rgba(35, 165, 90, 0.08), transparent 24%);
 }
 
 .container {
-  max-width: 1100px;
+  max-width: 1200px;
   margin: auto;
+}
+
+.hero {
+  margin-bottom: 24px;
+}
+
+.hero h2 {
+  margin: 0 0 8px;
+  font-size: 2rem;
+}
+
+.hero p {
+  margin: 0;
+  color: #b5bac1;
+  max-width: 720px;
+}
+
+.panel {
+  background: rgba(43, 45, 49, 0.9);
+  border: 1px solid #3a3d44;
+  border-radius: 14px;
+  padding: 18px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.22);
+}
+
+.panel h3 {
+  margin: 0 0 14px;
 }
 
 input, textarea, select {
@@ -26,6 +60,11 @@ input, textarea, select {
   color: #fff;
   border: 1px solid #444;
   border-radius: 6px;
+}
+
+input:focus, textarea:focus, select:focus {
+  outline: 2px solid rgba(88, 101, 242, 0.65);
+  outline-offset: 1px;
 }
 
 button {
@@ -55,6 +94,83 @@ button.danger { background: #ed4245; }
   background: #2b2d31;
   padding: 10px;
   border-radius: 6px;
+  min-height: 78px;
+  border: 1px solid #3f434d;
+}
+
+.setup-grid {
+  display: grid;
+  gap: 20px;
+}
+
+.field-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.field-full {
+  grid-column: 1 / -1;
+}
+
+.field label,
+.stack label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 600;
+}
+
+.helper {
+  margin: -2px 0 10px;
+  color: #b5bac1;
+  font-size: 0.92rem;
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+}
+
+.schedule-card {
+  margin-top: 20px;
+}
+
+.schedule-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.schedule-head p {
+  margin: 4px 0 0;
+  color: #b5bac1;
+  font-size: 0.92rem;
+}
+
+.schedule-wrap {
+  background: rgba(30, 31, 34, 0.72);
+  border: 1px solid #3a3d44;
+  border-radius: 12px;
+  padding: 14px;
+}
+
+.schedule-list {
+  display: grid;
+  gap: 8px;
+  min-height: 72px;
+}
+
+.row-header {
+  display: grid;
+  grid-template-columns: 1fr 120px 40px;
+  gap: 10px;
+  margin-bottom: 10px;
+  color: #b5bac1;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
 /* checkboxes */
@@ -65,40 +181,95 @@ button.danger { background: #ed4245; }
   text-align: center;
 }
 
+.checkbox-grid > div {
+  background: rgba(30, 31, 34, 0.72);
+  border: 1px solid #3a3d44;
+  border-radius: 10px;
+  padding: 10px 8px;
+}
+
+.checkbox-grid input {
+  width: auto;
+  margin: 0 0 6px;
+}
+
+.output-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.output-grid {
+  display: grid;
+  grid-template-columns: minmax(280px, 0.78fr) minmax(0, 1.22fr);
+  gap: 20px;
+  align-items: start;
+}
+
+.stack-column {
+  display: grid;
+  gap: 20px;
+  width: 100%;
+}
+
+.card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.card-head h3 {
+  margin-bottom: 4px;
+}
+
+.card-head p {
+  margin: 0;
+  color: #b5bac1;
+  font-size: 0.92rem;
+}
+
 /* flyer layout */
 .flyer-row {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 16px;
-  margin-bottom: 16px;
-  align-items: stretch;
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 6px;
+  margin-bottom: 6px;
+  align-items: flex-start;
+}
+
+.flyer-row.names-times,
+.flyer-row.times-only {
+  justify-content: flex-start;
 }
 
 .tz-block {
   background: #2b2d31;
-  padding: 10px;
+  padding: 5px;
   border-radius: 6px;
   display: flex;
   flex-direction: column;
   height: 100%;
+  flex: 0 0 auto;
 }
 
 .inner {
   display: grid;
-  gap: 6px;
+  gap: 2px;
   align-items: stretch;
   flex: 1;
 }
 
 .tz-block strong {
   display: block;
-  margin-bottom: 10px;
+  margin-bottom: 3px;
+  font-size: 0.86rem;
 }
 
 .flyer-col {
   display: grid;
-  grid-template-rows: auto 1fr;
-  gap: 6px;
+  grid-template-rows: auto auto;
+  gap: 2px;
 }
 
 .flyer-col button,
@@ -107,9 +278,39 @@ button.danger { background: #ed4245; }
 }
 
 .flyer-col textarea {
-  min-height: 120px;
-  height: 100%;
-  resize: vertical;
+  min-height: 0;
+  height: auto;
+  resize: none;
+  overflow: hidden;
+  padding: 3px;
+  font-size: 0.82rem;
+  line-height: 1.22;
+}
+
+.names-block .flyer-col textarea {
+  font-size: 0.84rem;
+  white-space: pre;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.names-block {
+  width: 208px;
+}
+
+.time-block .flyer-col textarea {
+  font-size: 0.8rem;
+}
+
+.time-block {
+  width: 120px;
+}
+
+.flyer-copy {
+  min-width: 0;
+  padding: 3px 4px;
+  font-size: 0.78rem;
+  line-height: 1;
 }
 
 .actions {
@@ -128,21 +329,151 @@ button.danger { background: #ed4245; }
   margin-top: 8px;
   color: #ffcc66;
 }
+
+.flyer-controls {
+  width: 100%;
+  max-width: none;
+  padding: 12px;
+  align-self: stretch;
+}
+
+.flyer-output {
+  margin-top: 20px;
+}
+
+.flyer-controls .card-head {
+  margin-bottom: 8px;
+}
+
+.flyer-controls .card-head h3 {
+  margin-bottom: 2px;
+}
+
+.flyer-controls .card-head p {
+  font-size: 0.88rem;
+}
+
+.flyer-controls .field {
+  max-width: 160px;
+}
+
+.flyer-controls .field label {
+  margin-bottom: 4px;
+}
+
+.flyer-controls .field select {
+  margin-bottom: 0;
+}
+
+.flyer-controls .actions {
+  margin-bottom: 0;
+}
+
+.flyer-controls-body {
+  display: flex;
+  align-items: end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.toast {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  max-width: 320px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: rgba(237, 66, 69, 0.96);
+  color: #fff;
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.28);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  opacity: 0;
+  transform: translateY(10px);
+  pointer-events: none;
+  transition: opacity 160ms ease, transform 160ms ease;
+  z-index: 1000;
+}
+
+.toast.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.field-error {
+  outline: 2px solid rgba(237, 66, 69, 0.85);
+  outline-offset: 1px;
+}
+
+@media (max-width: 980px) {
+  .flyer-row {
+    flex-wrap: wrap;
+  }
+
+  .names-block,
+  .time-block {
+    width: 100%;
+  }
+
+  .output-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  body {
+    padding: 14px;
+  }
+
+  .field-grid,
+  .row-header,
+  .row {
+    grid-template-columns: 1fr;
+  }
+
+  .row-header div:last-child {
+    display: none;
+  }
+
+  .schedule-head,
+  .card-head {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .toast {
+    left: 14px;
+    right: 14px;
+    bottom: 14px;
+    max-width: none;
+  }
+}
 </style>
 </head>
 
 <body>
 <div class="container">
 
+<div class="hero">
 <h2>🚂 Locomotive Schedule Generator</h2>
 
-<label>Event Name</label>
+<p>Build one weekly lineup, then turn it into Discord timestamps, chatbot strings, and flyer-ready timezone blocks without hand-converting everything.</p>
+</div>
+<div class="setup-grid">
+<div class="panel">
+<h3>Setup</h3>
+<div class="field-grid">
+<div class="field">
+<label for="eventName">Event Name</label>
 <input id="eventName" value="DnB Locomotive">
+</div>
 
-<label>Start Date</label>
+<div class="field">
+<label for="startDate">Start Date</label>
 <input id="startDate" type="date">
+</div>
 
-<label>Input Timezone</label>
+<div class="field field-full">
+<label for="timezone">Input Timezone</label>
 <select id="timezone">
 <option value="auto">Local (Auto)</option>
 <option value="Europe/London">UK</option>
@@ -153,53 +484,117 @@ button.danger { background: #ed4245; }
 <option value="America/Denver">US Mountain</option>
 <option value="America/Los_Angeles">US Pacific</option>
 </select>
+</div>
 
-<label>Paste Schedule</label>
+<div class="field field-full stack">
+<label for="pasteBox">Paste Schedule</label>
+<p class="helper">Paste lines like <code>StreamerName 6pm</code> or an Excel-style copy with the time at the end of each row.</p>
 <textarea id="pasteBox"></textarea>
+</div>
+</div>
 
-<div id="schedule"></div>
 <div class="actions">
 <button onclick="parseSchedule()">Parse Schedule</button>
 <button onclick="addRow()">+ Add Row</button>
 </div>
 <div id="message" class="message"></div>
+</div>
+</div>
 
+<div class="panel schedule-card">
+<div class="schedule-head">
+<div>
+<h3>Schedule Rows</h3>
+<p>Use paste for speed, then tweak names and times manually if needed.</p>
+</div>
+</div>
+<div class="schedule-wrap">
+<div class="row-header">
+<div>Streamer</div>
+<div>Time</div>
+<div></div>
+</div>
+<div id="schedule" class="schedule-list"></div>
+</div>
+</div>
+
+<div class="section output-grid">
 <!-- HAMMERTIME -->
-<div class="section">
+<div class="stack-column">
+<div class="panel output-card">
+<div class="card-head">
+<div>
 <h3>Hammertime</h3>
+<p>Discord-ready output using absolute timestamps and rollover-aware timing.</p>
+</div>
+<div class="actions">
 <button onclick="generateHammertime()">Generate</button>
 <button onclick="generateHammertime(); copy('output')">Generate + Copy</button>
+</div>
+</div>
 <div id="output" class="output"></div>
 </div>
 
-<!-- CHATBOT -->
-<div class="section">
-<h3>Chatbot</h3>
-<div id="tzChecks" class="checkbox-grid"></div>
-<button onclick="generateBot()">Generate</button>
-<button onclick="generateBot(); copy('botOutput')">Generate + Copy</button>
-<div id="botOutput" class="output"></div>
+<div class="panel output-card flyer-controls">
+<div class="card-head">
+<div>
+<h3>Flyer Text</h3>
+<p>Set the output columns, then generate the copyable flyer blocks below.</p>
+</div>
 </div>
 
-<!-- FLYER -->
-<div class="section">
-<h3>Flyer Text (Canva)</h3>
-
-<label>Columns</label>
+<div class="flyer-controls-body">
+<div class="field">
+<label for="colCount">Columns</label>
 <select id="colCount">
 <option value="1">1</option>
 <option value="2" selected>2</option>
 <option value="3">3</option>
 <option value="4">4</option>
 </select>
+</div>
 
+<div class="actions">
 <button onclick="generateFlyer()">Generate Text</button>
+</div>
+</div>
+</div>
+</div>
+
+<!-- CHATBOT -->
+<div class="panel output-card">
+<div class="card-head">
+<div>
+<h3>Chatbot</h3>
+<p>Regional clock-view strings for chat commands and quick copy/paste.</p>
+</div>
+</div>
+<div id="tzChecks" class="checkbox-grid"></div>
+<div class="actions">
+<button onclick="generateBot()">Generate</button>
+<button onclick="generateBot(); copy('botOutput')">Generate + Copy</button>
+</div>
+<div id="botOutput" class="output"></div>
+</div>
+</div>
+
+<!-- FLYER -->
+<div class="panel output-card flyer-output">
+<div class="card-head">
+<div>
+<h3>Flyer Text</h3>
+<p>Split names and regional times into copyable text blocks for graphics.</p>
+</div>
+</div>
 
 <div id="flyerTimes"></div>
 
 </div>
+</div>
 
 </div>
+
+<div id="toast" class="toast" aria-live="polite"></div>
 
 <script>
 
@@ -214,6 +609,8 @@ const botOutput = document.getElementById("botOutput");
 const colCountSelect = document.getElementById("colCount");
 const flyerTimes = document.getElementById("flyerTimes");
 const message = document.getElementById("message");
+const toast = document.getElementById("toast");
+let toastTimer = null;
 
 // ---------- COPY ----------
 function copy(id){
@@ -224,6 +621,25 @@ function copy(id){
 
 function setMessage(text=""){
   message.textContent = text;
+}
+
+function showToast(text){
+  if(!text) return;
+  toast.textContent = text;
+  toast.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>toast.classList.remove("show"), 2600);
+}
+
+function clearFieldErrors(){
+  document.querySelectorAll(".field-error").forEach(el=>el.classList.remove("field-error"));
+}
+
+function flagField(el){
+  if(!el) return;
+  el.classList.add("field-error");
+  el.focus({preventScroll:true});
+  setTimeout(()=>el.classList.remove("field-error"), 2200);
 }
 
 // ---------- TZ MAP ----------
@@ -320,21 +736,31 @@ function getSelectedTimezones(){
 
 function validateInputs(options={}){
   const rows=getRows();
+  clearFieldErrors();
 
   if(!startDateInput.value){
-    setMessage("Please choose a start date first.");
+    const msg="Please choose a start date first.";
+    setMessage(msg);
+    showToast(msg);
+    flagField(startDateInput);
     return null;
   }
 
   if(rows.length===0){
-    setMessage("Please add at least one valid schedule row first.");
+    const msg="Please add at least one valid schedule row first.";
+    setMessage(msg);
+    showToast(msg);
+    flagField(pasteBox);
     return null;
   }
 
   if(options.requireTimezones){
     const tzs=getSelectedTimezones();
     if(tzs.length===0){
-      setMessage("Please select at least one timezone first.");
+      const msg="Please select at least one timezone first.";
+      setMessage(msg);
+      showToast(msg);
+      flagField(tzChecks.querySelector("input"));
       return null;
     }
     return {rows, tzs};
@@ -461,15 +887,13 @@ function generateFlyer(){
 
   flyerTimes.innerHTML="";
 
-  const row1=document.createElement("div");
-  row1.className="flyer-row";
-
-  const row2=document.createElement("div");
-  row2.className="flyer-row";
+  const row=document.createElement("div");
+  row.className="flyer-row names-times";
 
   function buildBlock(title, fn, idPrefix){
     const wrap=document.createElement("div");
     wrap.className="tz-block";
+    wrap.classList.add(title==="Names" ? "names-block" : "time-block");
     wrap.innerHTML=`<strong>${title}</strong>`;
 
     const inner=document.createElement("div");
@@ -482,10 +906,16 @@ function generateFlyer(){
 
       const ta=document.createElement("textarea");
       ta.id=idPrefix+"_"+i;
-      ta.value=fn(col);
+      const text=fn(col);
+      ta.value=text;
+      ta.rows=Math.max(text ? text.split("\n").length : 1, 1);
 
       const btn=document.createElement("button");
-      btn.textContent="Copy";
+      btn.className="flyer-copy";
+      btn.type="button";
+      btn.title="Copy";
+      btn.setAttribute("aria-label","Copy");
+      btn.textContent="⧉";
       btn.onclick=()=>copy(ta.id);
 
       group.appendChild(btn);
@@ -497,11 +927,10 @@ function generateFlyer(){
     return wrap;
   }
 
-  // Row 1
-  row1.appendChild(buildBlock("Names",col=>col.map(r=>r.name).join("\n"),"n"));
+  row.appendChild(buildBlock("Names",col=>col.map(r=>r.name).join("\n"),"n"));
 
-  tzs.slice(0,3).forEach(tz=>{
-    row1.appendChild(buildBlock(
+  tzs.forEach((tz,index)=>{
+    row.appendChild(buildBlock(
       tzMap[tz],
       col=>{
         let prev=null,off=0;
@@ -514,31 +943,11 @@ function generateFlyer(){
           return formatTime(t.h,t.m,tz);
         }).join("\n");
       },
-      tz
+      index < 3 ? tz : tz+"_2"
     ));
   });
 
-  // Row 2
-  tzs.slice(3).forEach(tz=>{
-    row2.appendChild(buildBlock(
-      tzMap[tz],
-      col=>{
-        let prev=null,off=0;
-        return col.map(r=>{
-          const [h,mi]=r.time.split(":").map(Number);
-          if(prev!==null && h<prev) off++;
-          prev=h;
-          const dt=makeUTCDate(...startDateInput.value.split("-").map(Number),h,mi,timezoneSelect.value);
-          const t=getTimeParts(dt,tz);
-          return formatTime(t.h,t.m,tz);
-        }).join("\n");
-      },
-      tz+"_2"
-    ));
-  });
-
-  flyerTimes.appendChild(row1);
-  flyerTimes.appendChild(row2);
+  flyerTimes.appendChild(row);
   setMessage("");
 }
 
