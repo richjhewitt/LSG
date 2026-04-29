@@ -650,26 +650,27 @@ button.danger { background: #ed4245; }
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
-  .icon-button {
+  .row-actions .icon-button {
     width: 100%;
   }
 
-  .row-actions .icon-button::after {
-    margin-left: 8px;
-    font-size: 0.75rem;
-    font-weight: 700;
+  .schedule-tools {
+    flex-wrap: nowrap;
   }
 
-  .row-actions .icon-button[aria-label="Add row above"]::after {
-    content: "Above";
+  .schedule-tools > .icon-button {
+    flex: 0 0 48px;
+    width: 48px;
   }
 
-  .row-actions .icon-button[aria-label="Add row below"]::after {
-    content: "Below";
+  .view-toggle {
+    flex: 0 0 auto;
+    grid-template-columns: repeat(2, 48px);
   }
 
-  .row-actions .icon-button[aria-label="Delete row"]::after {
-    content: "Delete";
+  .view-toggle .icon-button {
+    width: 48px;
+    height: 48px;
   }
 
   .row-header {
