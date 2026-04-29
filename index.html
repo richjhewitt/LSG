@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Locomotive Schedule Generator</title>
+
+<link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+<div class="container">
+
+<div class="hero">
+<h2>🚂 Locomotive Schedule Generator</h2>
+
+<p>Build one weekly lineup, then turn it into Discord timestamps, chatbot strings, and flyer-ready timezone blocks without hand-converting everything.</p>
+</div>
+<div class="setup-grid">
+<div class="panel">
+<h3>Setup</h3>
+<div class="field-grid">
+<div class="field">
+<label for="eventName">Event Name</label>
+<input id="eventName" value="DnB Locomotive">
+</div>
+
+<div class="field">
+<label for="startDate">Start Date</label>
+<input id="startDate" type="date">
+</div>
+
+<div class="field field-full">
+<label for="timezone">Input Timezone</label>
+<select id="timezone">
+<option value="auto">Local (Auto)</option>
+<option value="Europe/London">UK</option>
+<option value="Europe/Paris">EU</option>
+<option value="Australia/Brisbane">AUS</option>
+<option value="America/New_York">US East</option>
+<option value="America/Chicago">US Central</option>
+<option value="America/Denver">US Mountain</option>
+<option value="America/Los_Angeles">US Pacific</option>
+</select>
+</div>
+
+<div class="field field-full">
+<label>Output Timezones</label>
+<div id="tzChecks" class="checkbox-grid"></div>
+</div>
+
+<div class="field field-full stack">
+<label for="pasteBox">Paste Schedule</label>
+<p class="helper">Paste lines like <code>StreamerName 6pm</code> or an Excel-style copy with the time at the end of each row.</p>
+<textarea id="pasteBox"></textarea>
+</div>
+</div>
+
+<div class="actions">
+<button onclick="parseSchedule()">Parse Schedule</button>
+<button onclick="addRow()">+ Add Row</button>
+</div>
+<div id="message" class="message"></div>
+</div>
+</div>
+
+<div class="panel schedule-card">
+<div class="schedule-head">
+<div>
+<h3>Schedule Rows</h3>
+<p>Use paste for speed, then tweak names and times manually if needed.</p>
+</div>
+<div class="view-toggle" aria-label="Schedule view">
+<button id="editViewButton" class="icon-button active" type="button" title="Edit view" aria-label="Edit view"></button>
+<button id="tableViewButton" class="icon-button" type="button" title="Table view" aria-label="Table view"></button>
+</div>
+</div>
+<div class="schedule-wrap">
+<div class="row-header">
+<div></div>
+<div>Streamer</div>
+<div>Time</div>
+<div>Actions</div>
+</div>
+<div id="schedule" class="schedule-list"></div>
+<div id="scheduleTableWrap" class="schedule-table-wrap"></div>
+</div>
+</div>
+
+<div class="section output-grid">
+<!-- HAMMERTIME -->
+<div class="stack-column">
+<div class="panel output-card">
+<div class="card-head">
+<div>
+<h3>Hammertime</h3>
+<p>Discord-ready output using absolute timestamps and rollover-aware timing.</p>
+</div>
+<div class="actions">
+<button onclick="generateHammertime()">Generate</button>
+<button onclick="generateHammertime(); copy('output')">Generate + Copy</button>
+</div>
+</div>
+<div id="output" class="output"></div>
+</div>
+
+<div class="panel output-card flyer-controls">
+<div class="card-head">
+<div>
+<h3>Flyer Text</h3>
+<p>Set the output columns, then generate the copyable flyer blocks below.</p>
+</div>
+</div>
+
+<div class="flyer-controls-body">
+<div class="field">
+<label for="colCount">Columns</label>
+<select id="colCount">
+<option value="1">1</option>
+<option value="2" selected>2</option>
+<option value="3">3</option>
+<option value="4">4</option>
+</select>
+</div>
+
+<div class="actions">
+<button onclick="generateFlyer()">Generate Text</button>
+</div>
+</div>
+</div>
+</div>
+
+<!-- CHATBOT -->
+<div class="panel output-card">
+<div class="card-head">
+<div>
+<h3>Chatbot</h3>
+<p>Regional clock-view strings for chat commands and quick copy/paste.</p>
+</div>
+</div>
+<div class="actions">
+<button onclick="generateBot()">Generate</button>
+<button onclick="generateBot(); copy('botOutput')">Generate + Copy</button>
+</div>
+<div id="botOutput" class="output"></div>
+</div>
+</div>
+
+<!-- FLYER -->
+<div class="panel output-card flyer-output">
+<div class="card-head">
+<div>
+<h3>Flyer Text</h3>
+<p>Split names and regional times into copyable text blocks for graphics.</p>
+</div>
+</div>
+
+<div id="flyerTimes"></div>
+
+</div>
+</div>
+
+</div>
+
+<div id="toast" class="toast" aria-live="polite"></div>
+
+<script src="app.js"></script>
+</body>
+</html>
+
