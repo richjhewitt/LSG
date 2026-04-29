@@ -14,7 +14,7 @@
 <div class="hero">
 <h2>🚂 Locomotive Schedule Generator</h2>
 
-<p>Build one weekly lineup, then turn it into Discord timestamps, chatbot strings, and flyer-ready timezone blocks without hand-converting everything.</p>
+<p>Build or paste your lineup, then generate Discord, chatbot, and flyer outputs in seconds.</p>
 </div>
 <div class="setup-grid">
 <div class="panel">
@@ -58,7 +58,6 @@
 
 <div class="actions">
 <button onclick="parseSchedule()">Parse Schedule</button>
-<button onclick="addRow()">+ Add Row</button>
 </div>
 <div id="message" class="message"></div>
 </div>
@@ -68,11 +67,14 @@
 <div class="schedule-head">
 <div>
 <h3>Schedule Rows</h3>
-<p>Use paste for speed, then tweak names and times manually if needed.</p>
+<p>Paste your schedule or add entries manually. Drag to reorder if needed.</p>
 </div>
+<div class="schedule-tools">
+<button id="appendRowButton" class="icon-button" type="button" title="Add row" aria-label="Add row"></button>
 <div class="view-toggle" aria-label="Schedule view">
 <button id="editViewButton" class="icon-button active" type="button" title="Edit view" aria-label="Edit view"></button>
 <button id="tableViewButton" class="icon-button" type="button" title="Table view" aria-label="Table view"></button>
+</div>
 </div>
 </div>
 <div class="schedule-wrap">
@@ -94,7 +96,7 @@
 <div class="card-head">
 <div>
 <h3>Hammertime</h3>
-<p>Discord-ready output using absolute timestamps and rollover-aware timing.</p>
+<p>Discord-friendly timestamps with links to each stream.</p>
 </div>
 <div class="actions">
 <button onclick="generateHammertime()">Generate</button>
@@ -108,7 +110,7 @@
 <div class="card-head">
 <div>
 <h3>Flyer Text</h3>
-<p>Set the output columns, then generate the copyable flyer blocks below.</p>
+<p>Choose a column layout, then generate flyer text.</p>
 </div>
 </div>
 
@@ -135,7 +137,7 @@
 <div class="card-head">
 <div>
 <h3>Chatbot</h3>
-<p>Regional clock-view strings for chat commands and quick copy/paste.</p>
+<p>Chat-ready schedule strings for each timezone.</p>
 </div>
 </div>
 <div class="actions">
@@ -151,7 +153,7 @@
 <div class="card-head">
 <div>
 <h3>Flyer Text</h3>
-<p>Split names and regional times into copyable text blocks for graphics.</p>
+<p>Copyable columns for names and times, ready to overlay.</p>
 </div>
 </div>
 

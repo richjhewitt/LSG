@@ -4,6 +4,7 @@ const timezoneSelect = document.getElementById("timezone");
 const pasteBox = document.getElementById("pasteBox");
 const schedule = document.getElementById("schedule");
 const scheduleTableWrap = document.getElementById("scheduleTableWrap");
+const appendRowButton = document.getElementById("appendRowButton");
 const editViewButton = document.getElementById("editViewButton");
 const tableViewButton = document.getElementById("tableViewButton");
 const tzChecks = document.getElementById("tzChecks");
@@ -89,6 +90,7 @@ const icons = {
   grip: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="6" r="1"></circle><circle cx="9" cy="12" r="1"></circle><circle cx="9" cy="18" r="1"></circle><circle cx="15" cy="6" r="1"></circle><circle cx="15" cy="12" r="1"></circle><circle cx="15" cy="18" r="1"></circle></svg>',
   addAbove: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v10"></path><path d="M7 10l5-5 5 5"></path><path d="M6 19h12"></path></svg>',
   addBelow: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V9"></path><path d="M7 14l5 5 5-5"></path><path d="M6 5h12"></path></svg>',
+  plus: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14"></path><path d="M5 12h14"></path></svg>',
   trash: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18"></path><path d="M8 6V4h8v2"></path><path d="M19 6l-1 14H6L5 6"></path><path d="M10 11v5"></path><path d="M14 11v5"></path></svg>',
   edit: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"></path><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"></path></svg>',
   table: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"></rect><path d="M3 10h18"></path><path d="M9 4v16"></path><path d="M15 4v16"></path></svg>'
@@ -107,6 +109,8 @@ function makeIconButton(label, icon, className=""){
   return button;
 }
 
+appendRowButton.innerHTML=icons.plus;
+appendRowButton.onclick=()=>focusRow(addRow("","",{focus:true}));
 editViewButton.innerHTML=icons.edit;
 tableViewButton.innerHTML=icons.table;
 editViewButton.onclick=()=>setScheduleView("edit");
@@ -391,6 +395,7 @@ function parseSchedule(){
       if(norm) addRow(p[0],norm);
     }
   });
+  if(getScheduleRows().length===0) addRow();
   setMessage("");
 }
 
@@ -706,4 +711,5 @@ function generateFlyer(){
   setMessage("");
 }
 
+if(getScheduleRows().length===0) addRow();
 updateTimezoneLabels();
