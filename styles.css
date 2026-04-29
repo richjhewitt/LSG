@@ -603,8 +603,25 @@ button.danger { background: #ed4245; }
   }
 
   .output-grid {
-    grid-template-columns: 1fr;
+    display: flex;
+    flex-direction: column;
   }
+
+  /* Unwrap stack-column so its children join the flex flow independently */
+  .stack-column {
+    display: contents;
+  }
+
+  /*
+   * DOM order inside .output-grid once .stack-column uses display:contents:
+   *   child 1 — Hammertime  (was stack-column child 1)
+   *   child 2 — Flyer Controls (was stack-column child 2) ← was appearing before Chatbot
+   *   child 3 — Chatbot
+   *
+   * Desired mobile order: Hammertime → Chatbot → Flyer Controls
+   */
+  .flyer-controls { order: 2; }
+  .flyer-output   { order: 3; }
 }
 
 @media (max-width: 720px) {
