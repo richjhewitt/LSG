@@ -16,6 +16,7 @@ const message = document.getElementById("message");
 const toast = document.getElementById("toast");
 let toastTimer = null;
 let activeScheduleView = "edit";
+let pasteParseTimer = null;
 
 // ---------- COPY ----------
 function copy(id){
@@ -403,6 +404,11 @@ function parseSchedule(){
 
 pasteBox.addEventListener("paste",()=>{
   setTimeout(parseSchedule,0);
+});
+
+pasteBox.addEventListener("input",()=>{
+  clearTimeout(pasteParseTimer);
+  pasteParseTimer=setTimeout(parseSchedule,120);
 });
 
 startDateInput.addEventListener("change", updateTimezoneLabels);
