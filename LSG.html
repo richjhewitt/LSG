@@ -421,7 +421,7 @@ button.danger { background: #ed4245; }
 /* flyer layout */
 .flyer-row {
   display: flex;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
   gap: 6px;
   margin-bottom: 6px;
   align-items: flex-start;
@@ -1426,6 +1426,7 @@ function generateBot(){
     let line=`🚂 ${eventNameInput.value} (${getLabel(tz,base)}):`;
 
     datedRows.forEach(r=>{
+      if(!r.date) return;
       const t=getTimeParts(r.date,tz);
       line+=` 🚃 ${formatTime(t.h,t.m,tz)} @${r.name}`;
     });
@@ -1460,6 +1461,7 @@ function generateFlyer(){
 
   const {rows, tzs}=valid;
   const cols=parseInt(colCountSelect.value,10);
+  const referenceDate=getReferenceDate();
   const datedRows=getRowDatetimes(rows, timezoneSelect.value);
   const split=splitColumns(datedRows,cols);
 
@@ -1509,14 +1511,15 @@ function generateFlyer(){
 
   tzs.forEach((tz,index)=>{
     row.appendChild(buildBlock(
-      getLabel(tz,getReferenceDate()),
+      getLabel(tz,referenceDate),
       col=>{
         return col.map(r=>{
+          if(!r.date) return "";
           const t=getTimeParts(r.date,tz);
           return formatTime(t.h,t.m,tz);
         }).join("\n");
       },
-      index < 3 ? tz : tz+"_2"
+      tz
     ));
   });
 
