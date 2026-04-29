@@ -292,9 +292,11 @@ function getTableTimezones(){
 
 function getScheduleDatetimes(){
   const data=getScheduleRowData();
-  if(!startDateInput.value) return data.map(item=>({...item, date:null}));
-  const [y,m,d]=startDateInput.value.split("-").map(Number);
   const sourceTz=resolveInputTimezone();
+  const baseDate=startDateInput.value
+    ? startDateInput.value.split("-").map(Number)
+    : getDateParts(getReferenceDate(), sourceTz);
+  const [y,m,d]=baseDate;
   let prev=null,off=0;
   return data.map(item=>{
     if(!item.timeInput.value){
@@ -492,6 +494,18 @@ function getReferenceDate(){
   return new Date();
 }
 
+function getDateParts(date,tz){
+  const p=new Intl.DateTimeFormat("en-CA",{
+    timeZone:tz,
+    year:"numeric",
+    month:"2-digit",
+    day:"2-digit"
+  }).formatToParts(date);
+  const v={};
+  p.forEach(x=>v[x.type]=x.value);
+  return [+v.year,+v.month,+v.day];
+}
+
 function getLabel(tz,date){
   const str=new Intl.DateTimeFormat("en-GB",{timeZone:tz,timeZoneName:"shortOffset"}).format(date);
   if(tz==="Europe/London") return str.includes("+1")?"BST":"GMT";
@@ -504,15 +518,8 @@ function getLabel(tz,date){
 }
 
 function getTimeZoneDateKey(date,tz){
-  const p=new Intl.DateTimeFormat("en-CA",{
-    timeZone:tz,
-    year:"numeric",
-    month:"2-digit",
-    day:"2-digit"
-  }).formatToParts(date);
-  const v={};
-  p.forEach(x=>v[x.type]=x.value);
-  return `${v.year}-${v.month}-${v.day}`;
+  const [y,m,d]=getDateParts(date,tz);
+  return `${y}-${String(m).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
 }
 
 function getRowDatetimes(rows,sourceTz){
