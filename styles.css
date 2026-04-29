@@ -625,7 +625,25 @@ button.danger { background: #ed4245; }
   }
 
   .drag-handle {
-    width: 100%;
+    display: none;
+  }
+
+  .name-cell {
+    display: grid;
+    grid-template-columns: 1fr 48px;
+    gap: 8px;
+  }
+
+  .name-cell input {
+    padding-right: 8px;
+  }
+
+  .name-drag-handle {
+    position: static;
+    width: 48px;
+    border-left: 0;
+    border-radius: 8px;
+    background: #3a3d44;
   }
 
   .row-actions {
@@ -634,6 +652,24 @@ button.danger { background: #ed4245; }
 
   .icon-button {
     width: 100%;
+  }
+
+  .row-actions .icon-button::after {
+    margin-left: 8px;
+    font-size: 0.75rem;
+    font-weight: 700;
+  }
+
+  .row-actions .icon-button[aria-label="Add row above"]::after {
+    content: "Above";
+  }
+
+  .row-actions .icon-button[aria-label="Add row below"]::after {
+    content: "Below";
+  }
+
+  .row-actions .icon-button[aria-label="Delete row"]::after {
+    content: "Delete";
   }
 
   .row-header {
