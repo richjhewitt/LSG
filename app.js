@@ -726,3 +726,94 @@ function generateFlyer(){
 
 if(getScheduleRows().length===0) addRow();
 updateTimezoneLabels();
+
+// ---------- PERSIST ----------
+const STORAGE_KEY = "locomotive_schedule";
+
+function getState(){
+  return {
+    eventName: eventNameInput.value,
+    startDate: startDateInput.value,
+    timezone: timezoneSelect.value,
+    outputTimezones: getSelectedTimezones(),
+    rows: getScheduleRows().map(r=>({
+      name: r.querySelector(".name-input").value,
+      time: r.querySelector(".time-input").value
+    }))
+  };
+}
+
+function applyState(state){
+  if(!state) return;
+  if(state.eventName !== undefined) eventNameInput.value = state.eventName;
+  if(state.startDate !== undefined) startDateInput.value = state.startDate;
+  if(state.timezone !== undefined) timezoneSelect.value = state.timezone;
+
+  if(Array.isArray(state.outputTimezones)){
+    document.querySelectorAll("#tzChecks input").forEach(cb=>{
+      cb.checked = state.outputTimezones.includes(cb.value);
+    });
+  }
+
+  if(Array.isArray(state.rows) && state.rows.length > 0){
+    schedule.innerHTML = "";
+    state.rows.forEach(r=> addRow(r.name, r.time));
+  }
+
+  updateTimezoneLabels();
+}
+
+function saveToStorage(){
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(getState()));
+  } catch(e) {}
+}
+
+function loadFromStorage(){
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(raw) applyState(JSON.parse(raw));
+  } catch(e) {}
+}
+
+// Auto-save on any meaningful change
+document.addEventListener("input", saveToStorage);
+document.addEventListener("change", saveToStorage);
+
+// JSON export
+function exportJSON(){
+  const state = getState();
+  const name = (state.eventName || "locomotive").replace(/\s+/g, "_").toLowerCase();
+  const date = state.startDate || new Date().toISOString().slice(0,10);
+  const blob = new Blob([JSON.stringify(state, null, 2)], {type: "application/json"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `${name}_${date}.json`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+// JSON import
+function importJSON(){
+  const input = document.createElement("input");
+  input.type = "file";
+  input.accept = ".json,application/json";
+  input.onchange = e=>{
+    const file = e.target.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = ev=>{
+      try {
+        const state = JSON.parse(ev.target.result);
+        applyState(state);
+        saveToStorage();
+      } catch(err) {
+        showToast("Couldn't read that file — is it a valid schedule JSON?");
+      }
+    };
+    reader.readAsText(file);
+  };
+  input.click();
+}
+
+loadFromStorage();
