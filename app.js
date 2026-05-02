@@ -514,7 +514,10 @@ function getDateParts(date,tz){
 
 function getLabel(tz,date){
   const str=new Intl.DateTimeFormat("en-GB",{timeZone:tz,timeZoneName:"shortOffset"}).format(date);
-  if(tz==="Europe/London") return str.includes("+1")?"BST":"GMT";
+  if(tz==="Europe/London"){
+    const short=new Intl.DateTimeFormat("en-GB",{timeZone:tz,timeZoneName:"short"}).format(date);
+    return short.includes("BST")?"BST":"GMT";
+  }
   if(tz==="Europe/Paris") return str.includes("+2")?"CEST":"CET";
   if(tz==="Australia/Brisbane") return "AEST";
   if(tz==="America/New_York") return str.includes("-4")?"EDT":"EST";
@@ -830,6 +833,7 @@ function clearSchedule(){
   output.textContent = "";
   botOutput.textContent = "";
   setMessage("");
+  updateTimezoneLabels();
   saveToStorage();
 }
 
