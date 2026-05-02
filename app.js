@@ -816,4 +816,21 @@ function importJSON(){
   input.click();
 }
 
+// Clear schedule
+function clearSchedule(){
+  if(!confirm("Clear the current schedule? This can't be undone.")) return;
+  eventNameInput.value = "DnB Locomotive";
+  startDateInput.value = "";
+  timezoneSelect.value = "auto";
+  document.querySelectorAll("#tzChecks input").forEach(cb=> cb.checked = true);
+  pasteBox.value = "";
+  schedule.innerHTML = "";
+  addRow();
+  flyerTimes.innerHTML = "";
+  output.textContent = "";
+  botOutput.textContent = "";
+  setMessage("");
+  saveToStorage();
+}
+
 loadFromStorage();
