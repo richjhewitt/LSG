@@ -512,18 +512,33 @@ function getDateParts(date,tz){
   return [+v.year,+v.month,+v.day];
 }
 
+function getOffsetMinutes(tz,date){
+  const parts=new Intl.DateTimeFormat("en-US",{
+    timeZone:tz,
+    hour12:false,
+    hourCycle:"h23",
+    year:"numeric",
+    month:"2-digit",
+    day:"2-digit",
+    hour:"2-digit",
+    minute:"2-digit",
+    second:"2-digit"
+  }).formatToParts(date);
+  const v={};
+  parts.forEach(x=>v[x.type]=x.value);
+  const localAsUTC=Date.UTC(+v.year,+v.month-1,+v.day,+v.hour,+v.minute,+v.second);
+  return Math.round((localAsUTC - date.getTime()) / 60000);
+}
+
 function getLabel(tz,date){
-  const str=new Intl.DateTimeFormat("en-GB",{timeZone:tz,timeZoneName:"shortOffset"}).format(date);
-  if(tz==="Europe/London"){
-    const short=new Intl.DateTimeFormat("en-GB",{timeZone:tz,timeZoneName:"short"}).format(date);
-    return short.includes("BST")?"BST":"GMT";
-  }
-  if(tz==="Europe/Paris") return str.includes("+2")?"CEST":"CET";
+  const offset=getOffsetMinutes(tz,date);
+  if(tz==="Europe/London") return offset===60 ? "BST" : "GMT";
+  if(tz==="Europe/Paris") return offset===120 ? "CEST" : "CET";
   if(tz==="Australia/Brisbane") return "AEST";
-  if(tz==="America/New_York") return str.includes("-4")?"EDT":"EST";
-  if(tz==="America/Chicago") return str.includes("-5")?"CDT":"CST";
-  if(tz==="America/Denver") return str.includes("-6")?"MDT":"MST";
-  if(tz==="America/Los_Angeles") return str.includes("-7")?"PDT":"PST";
+  if(tz==="America/New_York") return offset===-240 ? "EDT" : "EST";
+  if(tz==="America/Chicago") return offset===-300 ? "CDT" : "CST";
+  if(tz==="America/Denver") return offset===-360 ? "MDT" : "MST";
+  if(tz==="America/Los_Angeles") return offset===-420 ? "PDT" : "PST";
 }
 
 function getTimeZoneDateKey(date,tz){
@@ -583,6 +598,10 @@ function updateTimezoneLabels(){
   const date=getReferenceDate();
   document.querySelectorAll("[data-tz-label]").forEach(el=>{
     el.textContent=getLabel(el.dataset.tzLabel,date);
+  });
+  Array.from(timezoneSelect.options).forEach(option=>{
+    if(option.value==="auto") return;
+    option.textContent=getLabel(option.value,date);
   });
   if(activeScheduleView==="table") renderScheduleTable();
 }
