@@ -22,19 +22,28 @@ let pasteParseTimer = null;
 function copy(id){
   const el = document.getElementById(id);
   if(!el) return;
-  navigator.clipboard.writeText(el.value ?? el.textContent ?? "");
+  copyText(el.value ?? el.dataset.copyText ?? el.textContent ?? "");
+}
+
+function copyText(text){
+  navigator.clipboard.writeText(text);
+  showToast("Copied", "success");
 }
 
 function setMessage(text=""){
   message.textContent = text;
 }
 
-function showToast(text){
+function showToast(text, type="error"){
   if(!text) return;
   toast.textContent = text;
+  toast.classList.toggle("success", type==="success");
   toast.classList.add("show");
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(()=>toast.classList.remove("show"), 2600);
+  toastTimer = setTimeout(()=>{
+    toast.classList.remove("show");
+    toast.classList.remove("success");
+  }, 2600);
 }
 
 function clearFieldErrors(){
@@ -94,7 +103,8 @@ const icons = {
   plus: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14"></path><path d="M5 12h14"></path></svg>',
   trash: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18"></path><path d="M8 6V4h8v2"></path><path d="M19 6l-1 14H6L5 6"></path><path d="M10 11v5"></path><path d="M14 11v5"></path></svg>',
   edit: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"></path><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"></path></svg>',
-  table: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"></rect><path d="M3 10h18"></path><path d="M9 4v16"></path><path d="M15 4v16"></path></svg>'
+  table: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"></rect><path d="M3 10h18"></path><path d="M9 4v16"></path><path d="M15 4v16"></path></svg>',
+  copy: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>'
 };
 
 let draggingRow = null;
@@ -640,7 +650,7 @@ function generateBot(){
   const base=getReferenceDate();
   const datedRows=getRowDatetimes(rows, timezoneSelect.value);
 
-  let out="";
+  const lines=[];
   tzs.forEach(tz=>{
     let line=`🚂 ${eventNameInput.value} (${getLabel(tz,base)}):`;
 
@@ -650,10 +660,26 @@ function generateBot(){
       line+=` 🚃 ${formatTime(t.h,t.m,tz)} @${r.name}`;
     });
 
-    out+="`"+line+"`\n\n";
+    lines.push(line);
   });
 
-  botOutput.textContent=out.trim();
+  botOutput.innerHTML="";
+  botOutput.dataset.copyText=lines.map(line=>"`"+line+"`").join("\n\n");
+  lines.forEach(line=>{
+    const row=document.createElement("div");
+    row.className="bot-line";
+
+    const text=document.createElement("div");
+    text.className="bot-string";
+    text.textContent="`"+line+"`";
+
+    const button=makeIconButton("Copy chatbot string", icons.copy, "bot-copy");
+    button.onclick=()=>copyText(line);
+
+    row.appendChild(text);
+    row.appendChild(button);
+    botOutput.appendChild(row);
+  });
   setMessage("");
 }
 
@@ -851,6 +877,7 @@ function clearSchedule(){
   flyerTimes.innerHTML = "";
   output.textContent = "";
   botOutput.textContent = "";
+  delete botOutput.dataset.copyText;
   setMessage("");
   updateTimezoneLabels();
   saveToStorage();
