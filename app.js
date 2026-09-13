@@ -617,6 +617,12 @@ function updateTimezoneLabels(){
 }
 
 // ---------- HAMMERTIME ----------
+function formatDiscordStreamer(name){
+  const emote = name.match(/<a?:[A-Za-z0-9_]+:\d+>|:[A-Za-z0-9_+-]+:/);
+  if(emote) return emote[0];
+  return `[${name}](https://twitch.tv/${name})`;
+}
+
 function generateHammertime(){
   const valid=validateInputs();
   if(!valid) return;
@@ -634,7 +640,7 @@ function generateHammertime(){
     const unix=Math.floor(dt/1000);
     if(!first) first=unix;
 
-    out+=`> [${r.name}](https://twitch.tv/${r.name}) - <t:${unix}:t>\n`;
+    out+=`> ${formatDiscordStreamer(r.name)} - <t:${unix}:t>\n`;
   });
 
   output.textContent=`🚂 ${eventNameInput.value} - <t:${first}:R>\n`+out.trim();
